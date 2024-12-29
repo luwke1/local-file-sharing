@@ -1,3 +1,4 @@
+const os = require('os');
 const express = require('express');
 const cors = require('cors');
 const multer = require('multer');
@@ -7,6 +8,8 @@ const archiver = require('archiver');
 
 const app = express();
 const PORT = 3000;
+const localIP = 'ENTER_YOUR_LOCAL_IP_ADDRESS_HERE';
+
 app.use(cors());
 
 // Add middleware to parse JSON bodies
@@ -117,6 +120,6 @@ app.post('/upload', upload.array('files', 50), (req, res) => {
   res.redirect('/');
 });
 
-app.listen(PORT, '192.168.50.13', () => {
-  console.log(`Server listening on http://0.0.0.0:${PORT}`);
+app.listen(PORT, localIP, () => {
+  console.log(`Server running at http://${localIP}:${PORT}/`);
 });
