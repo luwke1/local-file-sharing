@@ -37,6 +37,7 @@ const storage = multer.diskStorage({
 
 const upload = multer({ storage: storage });
 
+// Endpoint to send out the main home page html
 app.get('/', (req, res) => {
   console.log('Request received at /');
   res.sendFile(path.join(__dirname, 'html', 'index.html'));
@@ -57,8 +58,25 @@ app.get('/download/:filename', (req, res) => {
   const filePath = path.join(__dirname, 'uploads', req.params.filename);
   res.download(filePath, (err) => {
       if (err) {
-          return res.status(404).send('File not found'); // Add "return" here
+          return res.status(404).send('File not found');
       }
+  });
+});
+
+// Endpoint to delete a specific file
+app.delete('/delete/:filename', (req, res) => {
+  const filePath = path.join(__dirname, 'uploads', req.params.filename);
+  fs.access(filePath, fs.constants.F_OK, (err) => {
+    if (err) {
+      return res.status(404).send('File does not exist');
+    }
+
+    fs.unlink(filePath, (err) => {
+      if (err) {
+        return res.status(500).send('Error deleting file');
+      }
+      res.sendStatus(200);
+    });
   });
 });
 

@@ -1,100 +1,114 @@
 body {
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-    background-color: #f5f5f7;
-    color: #333;
-    margin: 0;
-    padding: 0;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    min-height: 100vh;
-  }
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  background-color: #f5f5f7;
+  color: #333;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+}
 
-  h1, h2 {
-    color: #1d1d1f;
-  }
+h1, h2 {
+  color: #1d1d1f;
+}
 
-  h1 {
-    margin-bottom: 10px;
-  }
+h1 {
+  margin-bottom: 10px;
+}
 
-  h2 {
-    margin-top: 30px;
-  }
+h2 {
+  margin-top: 30px;
+}
 
-  form {
-    background-color: #fff;
-    padding: 20px;
-    border-radius: 10px;
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    margin-bottom: 20px;
-  }
+form {
+  background-color: #fff;
+  padding: 20px;
+  border-radius: 10px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 20px;
+}
 
-  input[type="file"] {
-    padding: 5px;
-    font-size: 14px;
-  }
+input[type="file"] {
+  padding: 5px;
+  font-size: 14px;
+}
 
-  button {
-    background-color: #007aff;
-    color: #fff;
-    border: none;
-    border-radius: 5px;
-    padding: 10px 20px;
-    font-size: 16px;
-    cursor: pointer;
-    transition: background-color 0.2s ease;
-  }
+button {
+  background-color: #007aff;
+  color: #fff;
+  border: none;
+  border-radius: 5px;
+  padding: 10px 20px;
+  font-size: 16px;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
 
-  button:hover {
-    background-color: #005ecb;
-  }
+button:hover {
+  background-color: #005ecb;
+}
 
-  ul {
-    list-style: none;
-    padding: 0;
-  }
+ul {
+  list-style: none;
+  padding: 0;
+}
 
-  li {
-    background-color: #fff;
-    margin: 10px 0;
-    padding: 15px 20px;
-    border-radius: 10px;
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-  }
+li {
+  background-color: #fff;
+  margin: 10px 0;
+  padding: 15px 20px;
+  border-radius: 10px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  display: flex;
+  align-items: center;
+  justify-content: space-between; /* Ensures spacing between file link and delete button */
+}
 
-  li a {
-    color: #007aff;
-    text-decoration: none;
-    font-weight: 500;
-    transition: color 0.2s ease;
-  }
+li a {
+  color: #007aff;
+  text-decoration: none;
+  font-weight: 500;
+  transition: color 0.2s ease;
+  margin-right: auto; /* Pushes the link to the left */
+}
 
-  li a:hover {
-    color: #005ecb;
-  }
+li a:hover {
+  color: #005ecb;
+}
 
-  .fileCheckbox {
-    margin-right: 10px;
-  }
+.fileCheckbox {
+  margin-right: 15px;
+}
 
-  #fileList {
-    width: 100%;
-    max-width: 600px;
-  }
+.deleteBtn {
+  background: transparent;
+  border: none;
+  color: #ff3b30;
+  font-weight: bold;
+  font-size: 16px;
+  cursor: pointer;
+}
 
-  #batchDownload {
-    margin-top: 20px;
-    background-color: #ff9500;
-  }
+.deleteBtn:hover {
+  color: #c30000;
+}
 
-  #batchDownload:hover {
-    background-color: #cc7a00;
-  }
+#fileList {
+  width: 100%;
+  max-width: 600px;
+}
+
+#batchDownload {
+  margin-top: 20px;
+  background-color: #ff9500;
+}
+
+#batchDownload:hover {
+  background-color: #cc7a00;
+}
