@@ -2,36 +2,19 @@
 <html>
 <head>
   <title>File Upload</title>
-  <script>
-    async function fetchFiles() {
-      const response = await fetch('/files');
-      const files = await response.json();
-      const fileList = document.getElementById('fileList');
-      fileList.innerHTML = '';
-      files.forEach(file => {
-        const listItem = document.createElement('li');
-        const link = document.createElement('a');
-        link.href = `/download/${file}`;
-        link.textContent = file;
-        link.download = file;
-        listItem.appendChild(link);
-        fileList.appendChild(listItem);
-      });
-    }
-
-    document.addEventListener('DOMContentLoaded', fetchFiles);
-  </script>
+  <link rel="stylesheet" href="/css/styles.css">
 </head>
 <body>
   <h1>Upload Files</h1>
-  <form action="/upload" method="POST" enctype="multipart/form-data" target="uploadTarget" onsubmit="setTimeout(fetchFiles, 1000)">
+  <form action="/upload" method="POST" enctype="multipart/form-data">
     <input type="file" name="files" multiple required />
     <button type="submit">Upload</button>
   </form>
 
-  <iframe name="uploadTarget" style="display:none;"></iframe>
-
   <h2>Uploaded Files</h2>
   <ul id="fileList"></ul>
+  <button id="batchDownload" onclick="downloadBatch()">Download Selected</button>
+
+  <script src="/javascript/index.js"></script>
 </body>
 </html>
