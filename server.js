@@ -31,7 +31,6 @@ const storage = multer.diskStorage({
     cb(null, 'uploads/'); // store files in the local 'uploads' folder
   },
   filename: (req, file, cb) => {
-    // Example naming: use current timestamp + original filename
     const uniqueSuffix = Date.now() + '-' + file.originalname;
     cb(null, uniqueSuffix);
   }
@@ -115,7 +114,7 @@ app.post('/upload', upload.array('files', 50), (req, res) => {
   }
   console.log('Files received:', req.files);
 
-  // Redirect to root after successful upload
+  // Redirect to root after upload
   res.redirect('/');
 });
 
