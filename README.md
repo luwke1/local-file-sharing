@@ -2,6 +2,10 @@
 
 A lightweight, self-hosted application for sharing files over a local network. This project is designed to be simple, fast, and effective, making it ideal for quick file transfers without relying on third-party services.
 
+<div align="center">
+  <img src="https://github.com/user-attachments/assets/e0f2dc2b-c7a2-41c5-bf7b-3c59e659de9c" alt="Local File Sharing">
+</div>
+
 ## Features
 
 - Upload multiple files with ease.
