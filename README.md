@@ -60,8 +60,8 @@ Once the server is running, open a web browser and navigate to:
 ```
 http://localhost:3000
 ```
+**IMPORTANT NOTE:** Replace `localhost` with your local IP address if accessing from another device on the same network.
 
-Replace `localhost` with your local IP address if accessing from another device on the same network.
 
 ## Functionalities
 
