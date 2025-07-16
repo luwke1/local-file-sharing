@@ -1,20 +1,28 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
+
 <head>
-  <title>File Upload</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Local File Share</title>
   <link rel="stylesheet" href="/css/styles.css">
 </head>
+
 <body>
-  <h1>Upload Files</h1>
-  <form action="/upload" method="POST" enctype="multipart/form-data">
+  <h1>Local File Share</h1>
+  <form id="uploadForm" enctype="multipart/form-data">
     <input type="file" name="files" multiple required />
     <button type="submit">Upload</button>
   </form>
 
   <h2>Uploaded Files</h2>
-  <ul id="fileList"></ul>
-  <button id="batchDownload" onclick="downloadBatch()">Download Selected</button>
+  <div class="controls">
+    <button id="batchDownload">Download Selected</button>
+  </div>
+  <ul id="fileList">
+  </ul>
 
   <script src="/javascript/index.js"></script>
 </body>
+
 </html>

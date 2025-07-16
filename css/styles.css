@@ -3,112 +3,157 @@ body {
   background-color: #f5f5f7;
   color: #333;
   margin: 0;
-  padding: 0;
+  padding: 20px;
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
   min-height: 100vh;
+  box-sizing: border-box;
 }
 
-h1, h2 {
+h1,
+h2 {
   color: #1d1d1f;
+  text-align: center;
 }
 
 h1 {
-  margin-bottom: 10px;
-}
-
-h2 {
-  margin-top: 30px;
-}
-
-form {
-  background-color: #fff;
-  padding: 20px;
-  border-radius: 10px;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-  display: flex;
-  align-items: center;
-  gap: 10px;
   margin-bottom: 20px;
 }
 
+h2 {
+  margin-top: 40px;
+  margin-bottom: 10px;
+}
+
+#uploadForm {
+  background-color: #fff;
+  padding: 20px;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 15px;
+  margin-bottom: 20px;
+  width: 100%;
+  max-width: 600px;
+  box-sizing: border-box;
+}
+
 input[type="file"] {
-  padding: 5px;
+  flex-grow: 1;
   font-size: 14px;
+  min-width: 200px;
 }
 
 button {
   background-color: #007aff;
   color: #fff;
   border: none;
-  border-radius: 5px;
+  border-radius: 8px;
   padding: 10px 20px;
   font-size: 16px;
+  font-weight: 500;
   cursor: pointer;
-  transition: background-color 0.2s ease;
+  transition: background-color 0.2s ease, transform 0.1s ease;
 }
 
 button:hover {
   background-color: #005ecb;
 }
 
-ul {
+button:active {
+  transform: scale(0.98);
+}
+
+button:disabled {
+  background-color: #b0b0b0;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.controls {
+  width: 100%;
+  max-width: 600px;
+  text-align: right;
+  margin-bottom: 10px;
+}
+
+#fileList {
   list-style: none;
   padding: 0;
+  width: 100%;
+  max-width: 600px;
+  box-sizing: border-box;
 }
 
-li {
+#fileList li {
   background-color: #fff;
   margin: 10px 0;
-  padding: 15px 20px;
+  padding: 12px 20px;
   border-radius: 10px;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
   display: flex;
   align-items: center;
-  justify-content: space-between; /* Ensures spacing between file link and delete button */
+  gap: 15px;
+  transition: box-shadow 0.2s ease;
 }
 
-li a {
+#fileList li:hover {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+}
+
+#fileList li.empty-list {
+  justify-content: center;
+  color: #888;
+  box-shadow: none;
+  background-color: transparent;
+}
+
+#fileList a {
   color: #007aff;
   text-decoration: none;
   font-weight: 500;
   transition: color 0.2s ease;
-  margin-right: auto; /* Pushes the link to the left */
+  margin-right: auto;
+  word-break: break-all;
 }
 
-li a:hover {
+#fileList a:hover {
   color: #005ecb;
+  text-decoration: underline;
 }
 
 .fileCheckbox {
-  margin-right: 15px;
+  margin-right: 5px;
+  flex-shrink: 0;
 }
 
 .deleteBtn {
   background: transparent;
   border: none;
   color: #ff3b30;
+  font-size: 24px;
   font-weight: bold;
-  font-size: 16px;
   cursor: pointer;
+  padding: 0 5px;
+  line-height: 1;
+  flex-shrink: 0;
+  transition: color 0.2s ease, transform 0.1s ease;
 }
 
 .deleteBtn:hover {
   color: #c30000;
-}
-
-#fileList {
-  width: 100%;
-  max-width: 600px;
+  transform: scale(1.1);
 }
 
 #batchDownload {
-  margin-top: 20px;
-  background-color: #ff9500;
+  background-color: #34c759;
+  display: none;
+  /* Initially hidden, shown by JS if files exist */
 }
 
 #batchDownload:hover {
-  background-color: #cc7a00;
+  background-color: #2ca34a;
 }
