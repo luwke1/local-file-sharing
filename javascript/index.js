@@ -1,4 +1,4 @@
-const CHUNK_SIZE = 10 * 1024 * 1024; // 10MB
+const CHUNK_SIZE = 20 * 1024 * 1024;
 
 document.addEventListener('DOMContentLoaded', () => {
     fetchAndDisplayFiles();
