@@ -1,28 +1,46 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Local File Share</title>
   <link rel="stylesheet" href="/css/styles.css">
 </head>
-
 <body>
+  <!-- Drag and Drop Overlay -->
+  <div id="dropOverlay" class="hidden">
+    <div class="drop-message">Drop files to upload</div>
+  </div>
+
+  <!-- Storage Telemetry -->
+  <div id="storageBarContainer">
+    <div id="storageFill"></div>
+    <span id="storageText">Checking storage...</span>
+  </div>
+
   <h1>Local File Share</h1>
   <form id="uploadForm" enctype="multipart/form-data">
-    <input type="file" name="files" multiple required />
+    <input type="file" name="files" id="fileInput" multiple required />
     <button type="submit">Upload</button>
   </form>
 
+  <!-- Active Uploads Trackers go here -->
+  <div id="uploadTracker"></div>
+
   <h2>Uploaded Files</h2>
   <div class="controls">
-    <button id="batchDownload">Download Selected</button>
+    <button id="batchDownload">Download Selected as ZIP</button>
   </div>
-  <ul id="fileList">
-  </ul>
+  <ul id="fileList"></ul>
+
+  <!-- Media Preview Modal -->
+  <div id="previewModal" class="hidden">
+    <div class="modal-content">
+      <button id="closeModal">&times;</button>
+      <div id="mediaContainer"></div>
+    </div>
+  </div>
 
   <script src="/javascript/index.js"></script>
 </body>
-
 </html>

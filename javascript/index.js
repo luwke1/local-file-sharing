@@ -1,169 +1,241 @@
+const CHUNK_SIZE = 10 * 1024 * 1024; // 10MB
+
 document.addEventListener('DOMContentLoaded', () => {
-    const uploadForm = document.getElementById('uploadForm');
-    const batchDownloadBtn = document.getElementById('batchDownload');
-
-    // Fetch and display files on page load
     fetchAndDisplayFiles();
+    fetchStorageInfo();
 
-    // Add event listener for the upload form
-    if (uploadForm) {
-        uploadForm.addEventListener('submit', handleUpload);
-    }
+    // Event Listeners
+    document.getElementById('uploadForm').addEventListener('submit', handleUploadSubmit);
+    document.getElementById('batchDownload').addEventListener('click', downloadBatch);
+    document.getElementById('closeModal').addEventListener('click', closePreview);
+    
+    // Drag & Drop
+    window.addEventListener('dragover', (e) => { e.preventDefault(); document.getElementById('dropOverlay').classList.remove('hidden'); });
+    window.addEventListener('dragleave', (e) => { 
+        if (e.relatedTarget === null) document.getElementById('dropOverlay').classList.add('hidden'); 
+    });
+    window.addEventListener('drop', handleDrop);
 
-    // Add event listener for the batch download button
-    if (batchDownloadBtn) {
-        batchDownloadBtn.addEventListener('click', downloadBatch);
-    }
+    // Paste handling
+    document.addEventListener('paste', handlePaste);
+
+    // Server-Sent Events (Live Sync)
+    const eventSource = new EventSource('/events');
+    eventSource.onmessage = (e) => {
+        if (e.data === 'update') {
+            fetchAndDisplayFiles();
+            fetchStorageInfo();
+        }
+    };
 });
 
-/**
- * Fetches the list of files from the server and displays them.
- */
+// --- FETCH & RENDER LOGIC ---
+
 async function fetchAndDisplayFiles() {
     try {
         const response = await fetch('/files');
-        if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
-
         const files = await response.json();
         const fileList = document.getElementById('fileList');
-        const batchDownloadBtn = document.getElementById('batchDownload');
+        const batchBtn = document.getElementById('batchDownload');
 
-        fileList.innerHTML = ''; // Clear the list before repopulating
-
+        fileList.innerHTML = '';
         if (files.length === 0) {
-            fileList.innerHTML = '<li class="empty-list">No files have been uploaded yet.</li>';
-            batchDownloadBtn.style.display = 'none'; // Hide button if no files
+            fileList.innerHTML = '<li class="empty-list">No files available.</li>';
+            batchBtn.style.display = 'none';
             return;
         }
 
-        batchDownloadBtn.style.display = 'inline-block'; // Show button if files exist
-
+        batchBtn.style.display = 'inline-block';
         files.forEach(file => {
-            const listItem = document.createElement('li');
+            const li = document.createElement('li');
+            const isMedia = file.originalName.match(/\.(mp4|webm|jpg|jpeg|png|gif|webp|mp3|wav)$/i);
 
-            const checkbox = document.createElement('input');
-            checkbox.type = 'checkbox';
-            checkbox.value = file.storedName;
-            checkbox.className = 'fileCheckbox';
-
-            const link = document.createElement('a');
-            link.href = `/download/${encodeURIComponent(file.storedName)}`;
-            link.textContent = file.originalName;
-            link.title = `Download ${file.originalName}`;
-
-            const deleteBtn = document.createElement('button');
-            deleteBtn.className = 'deleteBtn';
-            deleteBtn.innerHTML = '&times;'; // Use HTML entity for a nicer 'X'
-            deleteBtn.title = `Delete ${file.originalName}`;
-            deleteBtn.onclick = () => deleteFile(file.storedName, file.originalName);
-
-            listItem.appendChild(checkbox);
-            listItem.appendChild(link);
-            listItem.appendChild(deleteBtn);
-            fileList.appendChild(listItem);
+            li.innerHTML = `
+                <input type="checkbox" class="fileCheckbox" value="${file.storedName}">
+                <a href="/download/${encodeURIComponent(file.storedName)}" title="Download">${file.originalName}</a>
+                <div class="actions">
+                    ${isMedia ? `<button class="previewBtn" onclick="openPreview('${file.storedName}', '${file.originalName}')">👁️</button>` : ''}
+                    <button class="deleteBtn" onclick="deleteFile('${file.storedName}')">&times;</button>
+                </div>
+            `;
+            fileList.appendChild(li);
         });
-    } catch (error) {
-        console.error('Error fetching files:', error);
-        document.getElementById('fileList').innerHTML = '<li class="empty-list">Error loading files. Please refresh the page.</li>';
+    } catch (err) { console.error(err); }
+}
+
+async function fetchStorageInfo() {
+    try {
+        const res = await fetch('/storage-info');
+        const { freeSpace, totalSpace } = await res.json();
+        const used = totalSpace - freeSpace;
+        const percent = (used / totalSpace) * 100;
+        
+        document.getElementById('storageFill').style.width = `${percent}%`;
+        document.getElementById('storageText').innerText = 
+            `Storage: ${formatBytes(used)} / ${formatBytes(totalSpace)} (${percent.toFixed(1)}% Used)`;
+    } catch (err) { console.error('Storage check failed'); }
+}
+
+// --- FILE UPLOAD PIPELINE ---
+
+function handleDrop(e) {
+    e.preventDefault();
+    document.getElementById('dropOverlay').classList.add('hidden');
+    if (e.dataTransfer.files.length > 0) processFiles(e.dataTransfer.files);
+}
+
+function handlePaste(e) {
+    if (e.clipboardData.files.length > 0) processFiles(e.clipboardData.files);
+}
+
+function handleUploadSubmit(e) {
+    e.preventDefault();
+    const input = document.getElementById('fileInput');
+    if (input.files.length > 0) processFiles(input.files);
+    input.value = ''; // Reset
+}
+
+async function processFiles(files) {
+    for (let i = 0; i < files.length; i++) {
+        uploadFileChunked(files[i]);
     }
 }
 
-/**
- * Handles the file upload process via AJAX.
- * @param {Event} event The form submission event.
- */
-async function handleUpload(event) {
-    event.preventDefault();
+async function uploadFileChunked(file) {
+    const totalChunks = Math.ceil(file.size / CHUNK_SIZE);
+    const uploadId = Date.now().toString() + Math.random().toString(36).substr(2, 9);
+    
+    const ui = createProgressUI(file.name);
+    let uploadedBytes = 0;
+    const startTime = Date.now();
 
-    const form = event.target;
-    const formData = new FormData(form);
-    const fileInput = form.querySelector('input[type="file"]');
-    const uploadButton = form.querySelector('button[type="submit"]');
+    for (let chunkIndex = 0; chunkIndex < totalChunks; chunkIndex++) {
+        const start = chunkIndex * CHUNK_SIZE;
+        const end = Math.min(start + CHUNK_SIZE, file.size);
+        const chunk = file.slice(start, end);
+        
+        const formData = new FormData();
+        formData.append('chunk', chunk);
+        formData.append('uploadId', uploadId);
+        formData.append('chunkIndex', chunkIndex);
 
-    if (fileInput.files.length === 0) {
-        alert('Please select one or more files to upload.');
-        return;
-    }
-
-    uploadButton.disabled = true;
-    uploadButton.textContent = 'Uploading...';
-
-    try {
-        const response = await fetch('/upload', { method: 'POST', body: formData });
-        const result = await response.json();
-
-        if (response.ok && result.success) {
-            fetchAndDisplayFiles();
-            form.reset();
-        } else {
-            alert(`Upload failed: ${result.message || 'Please try again.'}`);
+        try {
+            await fetch('/upload-chunk', { method: 'POST', body: formData });
+            uploadedBytes += chunk.size;
+            updateProgressUI(ui, uploadedBytes, file.size, startTime);
+        } catch (err) {
+            ui.text.innerText = `Error uploading ${file.name}`;
+            return;
         }
-    } catch (error) {
-        console.error('Error uploading files:', error);
-        alert('An error occurred during upload. Please check the console and try again.');
-    } finally {
-        uploadButton.disabled = false;
-        uploadButton.textContent = 'Upload';
     }
-}
 
-/**
- * Deletes a specific file from the server.
- * @param {string} storedName The unique name of the file on the server.
- * @param {string} originalName The original name for display in prompts.
- */
-async function deleteFile(storedName, originalName) {
-    if (!confirm(`Are you sure you want to delete "${originalName}"?`)) return;
-
+    // Finalize
+    ui.text.innerText = 'Assembling file...';
     try {
-        const response = await fetch(`/delete/${encodeURIComponent(storedName)}`, { method: 'DELETE' });
-        if (response.ok) {
-            fetchAndDisplayFiles();
-        } else {
-            const result = await response.text();
-            alert(`Failed to delete ${originalName}: ${result}`);
-        }
-    } catch (error) {
-        console.error('Error deleting file:', error);
-        alert('An error occurred while deleting the file.');
-    }
-}
-
-/**
- * Downloads selected files as a single ZIP archive.
- */
-async function downloadBatch() {
-    const selectedFiles = Array.from(document.querySelectorAll('.fileCheckbox:checked'))
-        .map(checkbox => checkbox.value);
-
-    if (selectedFiles.length === 0) {
-        alert('Please select one or more files to download.');
-        return;
-    }
-
-    try {
-        const response = await fetch('/batch-download', {
+        await fetch('/upload-complete', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ files: selectedFiles })
+            body: JSON.stringify({ uploadId, fileName: file.name, totalChunks })
         });
-
-        if (response.ok) {
-            const blob = await response.blob();
-            const url = window.URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.style.display = 'none';
-            a.href = url;
-            a.download = 'files.zip';
-            document.body.appendChild(a);
-            a.click();
-            window.URL.revokeObjectURL(url);
-            a.remove();
-        } else {
-            throw new Error(`Server responded with ${response.status}`);
-        }
-    } catch (error) {
-        console.error('Error during batch download:', error);
-        alert('An error occurred while creating the download.');
+        ui.container.remove(); // Cleanup UI on success
+    } catch (err) {
+        ui.text.innerText = 'Assembly failed.';
     }
+}
+
+// --- UI HELPERS ---
+
+function createProgressUI(fileName) {
+    const container = document.createElement('div');
+    container.className = 'upload-progress-item';
+    
+    const text = document.createElement('div');
+    text.className = 'upload-progress-text';
+    text.innerText = `Preparing: ${fileName}`;
+    
+    const barTrack = document.createElement('div');
+    barTrack.className = 'upload-progress-bar-track';
+    
+    const barFill = document.createElement('div');
+    barFill.className = 'upload-progress-bar-fill';
+    
+    barTrack.appendChild(barFill);
+    container.appendChild(text);
+    container.appendChild(barTrack);
+    document.getElementById('uploadTracker').appendChild(container);
+    
+    return { container, text, barFill, fileName };
+}
+
+function updateProgressUI(ui, uploadedBytes, totalBytes, startTime) {
+    const percent = Math.round((uploadedBytes / totalBytes) * 100);
+    const elapsed = (Date.now() - startTime) / 1000;
+    const speed = uploadedBytes / elapsed; // bytes per sec
+    const remaining = (totalBytes - uploadedBytes) / speed; // seconds
+    
+    ui.barFill.style.width = `${percent}%`;
+    ui.text.innerText = `${ui.fileName} - ${percent}% (${formatBytes(speed)}/s) - ETA: ${formatTime(remaining)}`;
+}
+
+// --- UTILS & PREVIEWS ---
+
+async function deleteFile(storedName) {
+    if (!confirm('Delete this file?')) return;
+    await fetch(`/delete/${encodeURIComponent(storedName)}`, { method: 'DELETE' });
+}
+
+async function downloadBatch() {
+    const selected = Array.from(document.querySelectorAll('.fileCheckbox:checked')).map(cb => cb.value);
+    if (selected.length === 0) return alert('Select files to download.');
+
+    const res = await fetch('/batch-download', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ files: selected })
+    });
+    
+    if (res.ok) {
+        const blob = await res.blob();
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'batch-download.zip';
+        a.click();
+    }
+}
+
+function openPreview(storedName, originalName) {
+    const modal = document.getElementById('previewModal');
+    const container = document.getElementById('mediaContainer');
+    const url = `/download/${encodeURIComponent(storedName)}?preview=true`;
+    
+    container.innerHTML = '';
+    
+    if (originalName.match(/\.(mp4|webm)$/i)) {
+        container.innerHTML = `<video controls autoplay><source src="${url}"></video>`;
+    } else if (originalName.match(/\.(mp3|wav)$/i)) {
+        container.innerHTML = `<audio controls autoplay><source src="${url}"></audio>`;
+    } else {
+        container.innerHTML = `<img src="${url}" alt="Preview">`;
+    }
+    
+    modal.classList.remove('hidden');
+}
+
+function closePreview() {
+    document.getElementById('previewModal').classList.add('hidden');
+    document.getElementById('mediaContainer').innerHTML = ''; // Stops audio/video
+}
+
+function formatBytes(bytes) {
+    if (bytes === 0) return '0 B';
+    const k = 1024, sizes = ['B', 'KB', 'MB', 'GB', 'TB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+}
+
+function formatTime(seconds) {
+    if (!isFinite(seconds)) return 'Calculating...';
+    if (seconds < 60) return Math.round(seconds) + 's';
+    return Math.floor(seconds / 60) + 'm ' + Math.round(seconds % 60) + 's';
 }
